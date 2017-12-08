@@ -3,25 +3,23 @@ package edu.umbc.bft.net.packet.impl;
 import edu.umbc.bft.net.bean.IPAddress;
 import edu.umbc.bft.net.packet.Header;
 
-public class DefaultHeader implements Header	{
+public class FloodHeader implements Header {
 
-	private String source, destination;
+	private String source;
 	private long sequenceNo;
 	private long timestamp;
 	
-	public DefaultHeader(IPAddress src, IPAddress dest) {
+	public FloodHeader(IPAddress src) {
 		this();
 		this.source = src.toString();
-		this.destination = dest.toString();
-	}//End of constructor
-
-	public DefaultHeader(String srcID, String destID) {
-		this();
-		this.source = srcID;
-		this.destination = destID;
 	}//End of constructor
 	
-	private DefaultHeader() {
+	public FloodHeader(String srcID) {
+		this();
+		this.source = srcID;
+	}//End of constructor
+	
+	private FloodHeader() {
 		this.timestamp = System.currentTimeMillis();
 	}//End of constructor
 	
@@ -35,12 +33,14 @@ public class DefaultHeader implements Header	{
 	}
 	@Override
 	public String getSource() {
-		return this.source;
+		return this.source.toString();
 	}
+	
 	@Override
 	public String getDestination() {
-		return this.destination;
+		return null;
 	}
+	
 	@Override
 	public long getSequenceNumber() {
 		return this.sequenceNo;

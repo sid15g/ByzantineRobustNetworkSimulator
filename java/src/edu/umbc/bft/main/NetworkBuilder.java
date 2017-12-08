@@ -143,9 +143,10 @@ public class NetworkBuilder		{
 	}//end of method
 	
 
-	public void startNodes(List<Thread> list)	{
+	public void initializeAndRunNodes(List<Thread> list)	{
 		
-		
+		for( int i=0; list!=null && i<list.size(); i++ )
+			list.get(i).start();
 		
 	}//end of method
 	

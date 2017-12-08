@@ -122,7 +122,7 @@ public class Test {
 	
 	public static void testPayloads() throws Exception {
 		
-		Payload p = new Identification("S5", new IPFactory().createIP().getBytes());
+		Payload p = new Identification("S5");
 		System.out.println(p.toString());
 	}
 }

@@ -6,6 +6,6 @@ public interface Header {
 	public String getDestination();
 	
 	public long getTimestamp();
-	public int getSequenceNumber();
+	public long getSequenceNumber();
 	
 }

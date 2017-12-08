@@ -22,5 +22,11 @@ public class TrustedNode extends AbstractTrustedNodeImpl	{
 	protected void execute(Interface i, Packet p) {
 		// TODO Auto-generated method stub
 	}//End Of Method
+
+	
+	@Override
+	public void init() {
+		// TODO Auto-generated method stub
+	}
 	
 }

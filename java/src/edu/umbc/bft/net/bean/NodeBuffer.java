@@ -11,7 +11,7 @@ import edu.umbc.bft.util.Logger;
 
 public class NodeBuffer	{
 
-	private int lastSeqNo;
+	private long lastSeqNo;
 	private Payload lastMessage;
 	private List<NeighborDetail> neighbors;
 	

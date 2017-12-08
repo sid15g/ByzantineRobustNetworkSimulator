@@ -75,6 +75,7 @@ public class Simulator {
 		if( success )		{
 			Logger.sysLog(LogValues.info, Simulator.class.getName(), " Network setup done... " );
 			Simulator.builder.dump();
+			Simulator.cleaner.setSwitches(threads);
 			Simulator.simulate(threads);
 		}else	{
 			Simulator.cleaner.start();
@@ -86,9 +87,8 @@ public class Simulator {
 	
 	public static void simulate(List<Thread> threads) {
 		
-		Simulator.builder.startNodes(threads);
+		Simulator.builder.initializeAndRunNodes(threads);
 		//TODO
-		
 		
 	}//End of method
 	

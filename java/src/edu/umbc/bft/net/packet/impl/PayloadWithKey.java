@@ -16,8 +16,8 @@ public abstract class PayloadWithKey implements Payload	{
 	
 
 	public final void addSignature(RSAPriv key)	{
-		this.signature = key.sign(this.toString());
 		this.key = key.getPublicKey();
+		this.signature = key.sign(this.toString());
 	}//end of method
 	
 	public final boolean verifySignature() {

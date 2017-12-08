@@ -25,18 +25,16 @@ public abstract class AbstractNodeImpl implements Node {
 	private RSAPriv privateKey;
 	protected NodeManager manager;
 	private Set<Interface> ports;
-	private long currentSequenceNo;
 	private List<LinkHandler> handlers;
 	private volatile boolean running, stopped;
 	
 	public AbstractNodeImpl()	{
-		this.currentSequenceNo = 1L;
-		this.manager = new NodeManager();
 		this.stopped = this.running = false;
 		this.name = NameGenerator.generate();
 		this.ports = new HashSet<Interface>();
 		this.privateKey = KeyStore.getNewKey();
 		this.handlers = new ArrayList<LinkHandler>();
+		this.manager = new NodeManager(this.name, this.privateKey);
 	}//End Of Constructor
 	
 	@Override
@@ -52,24 +50,31 @@ public abstract class AbstractNodeImpl implements Node {
 	}
 	@Override
 	public long getSequenceNo() {
-		return this.currentSequenceNo;
+		return this.manager.getSequenceNo();
 	}
 	
-	protected final long getNextSequenceNo() {
-		return ++this.currentSequenceNo;
+	protected long getNextSequenceNo() {
+		return this.manager.getNextSequenceNo();
+	}
+	protected final String subLog()	{
+		return "["+ this.name +"]  ";
+	}
+	protected RSAPriv getPrivateKey()	{
+		return this.privateKey;
 	}
 	
 	@Override
 	public final void shutdown() {
 		this.running = false;
 		this.stopped = true;
+		Logger.sysLog(LogValues.info, this.getClass().getName(), this.subLog() +" Node closed ");
 	}
 	@Override
 	public void addPhysicalPort(Interface i) {
 		if( !this.running && !this.stopped )
 			this.ports.add(i);
 		else
-			Logger.sysLog(LogValues.warn, this.getClass().getName(), " Cannot add PhysicalPort while the network is running... ");
+			Logger.sysLog(LogValues.warn, this.getClass().getName(), this.subLog() +" Cannot add PhysicalPort while the network is running... ");
 	}
 	@Override
 	public boolean hasPhysicalPort(Interface i) {
@@ -83,13 +88,13 @@ public abstract class AbstractNodeImpl implements Node {
 			LinkHandler handler = l.getHandler(this);
 			return this.handlers.add(handler);
 		}else	{
-			Logger.sysLog(LogValues.warn, this.getClass().getName(), " Cannot attach the Interface to the Link ");
+			Logger.sysLog(LogValues.warn, this.getClass().getName(), this.subLog() +" Cannot attach the Interface to the Link ");
 			return false;
 		}
 	}
 	
 	@Override
-	public final void run() {
+	public void run() {
 		
 		int i = 0;
 		this.running = true;
@@ -98,8 +103,11 @@ public abstract class AbstractNodeImpl implements Node {
 		while( this.running )	{
 			LinkHandler handler = this.handlers.get(i);
 			Packet p = handler.read();
-			this.execute(handler.getSource(), p);
 			i = (i+1)%size;
+			
+			if( p != null )
+				this.execute(handler.getSource(), p);
+			
 		}//End of loop
 		
 	}//End Of Method
@@ -109,14 +117,20 @@ public abstract class AbstractNodeImpl implements Node {
 		return this.privateKey.sign(p.toString());
 	}
 	
+	protected final void flood(Packet p) {
+		this.flood(null, p);
+	}
 	protected final void flood(Interface src, Packet p) {
+		
+		if( p == null )
+			Logger.sysLog(LogValues.error, this.getClass().getName(), this.subLog() +" No Packet to flood ");
 		
 		final int size = this.handlers.size();
 		
 		for( int i=0; i<size; i++ )	{
 			LinkHandler handler = this.handlers.get(i);
 
-			if( handler.isSource(src) == false )	{
+			if( src==null || handler.isSource(src) == false )	{
 				handler.send(p);
 			}
 		}//End of loop
@@ -132,7 +146,7 @@ public abstract class AbstractNodeImpl implements Node {
 			handler.send(p);
 			return true;
 		}else
-			Logger.sysLog(LogValues.warn, this.getClass().getName(), " Link Handler not found to reply ");
+			Logger.sysLog(LogValues.warn, this.getClass().getName(), this.subLog() +" Link Handler not found to reply ");
 		
 		return false;
 	}//End of Method
