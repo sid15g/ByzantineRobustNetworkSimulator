@@ -4,16 +4,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-import edu.umbc.bft.main.Simulator;
+import com.google.gson.Gson;
 
 public class CoreUtils	{
 	
 	private static Properties prop = null;
+	public static Gson GSON;
+	
+	
+	static{
+		CoreUtils.GSON = new Gson();
+	}
 	
 	public static boolean loadProperties() {	
 		CoreUtils.prop = new Properties();
 		
-		try( InputStream stream = Simulator.class.getClassLoader().getResourceAsStream("config.properties") ) {
+		try( InputStream stream = CoreUtils.class.getClassLoader().getResourceAsStream("config.properties") ) {
 			CoreUtils.prop.load(stream);
 			return true;
 		}catch(IOException e)	{

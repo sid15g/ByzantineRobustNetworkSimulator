@@ -24,13 +24,17 @@ public interface Packet	{
 	
 	/** Description of Packet : includes source, destination and seqNo. */
 	public default String dscp()	{
+		
+		final String ptype = this.getPayload().getClass().getSimpleName();
 		Header h = this.getHeader();
+		
 		if( h!=null && h instanceof FloodHeader )
-			return " ["+ h.getSource() +", "+ h.getSequenceNumber() +"] ";
+			return ptype +" : ["+ h.getSequenceNumber() +", "+ h.getSource() +"] ";
 		else if( h!=null )
-			return " ["+ h.getSource() +", "+ h.getDestination() +", "+ h.getSequenceNumber() +"] ";
+			return ptype +" : ["+ h.getSequenceNumber() +", "+ h.getSource() +", "+ h.getDestination() +"] ";
 		else
-			return " [] ";
-	}
+			return "[]";
+		
+	}//end of method
 	
 }

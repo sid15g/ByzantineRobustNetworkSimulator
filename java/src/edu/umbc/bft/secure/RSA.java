@@ -52,6 +52,12 @@ final class RSA	{
 		this.privateKey = this.publicKey.modInverse(phi);
 	}//end of constructor
 	
+	/** Author: Siddhant Goenka */
+	RSA(RSA r)	{
+		this.modulus    = new BigInteger(r.modulus.toByteArray());
+		this.publicKey  = new BigInteger("65537");
+	}//end of constructor
+
 	
 	BigInteger encrypt(BigInteger message) {
 		return message.modPow(publicKey, modulus);
@@ -60,7 +66,7 @@ final class RSA	{
 	BigInteger decrypt(BigInteger encrypted) {
 		return encrypted.modPow(privateKey, modulus);
 	}
-	
+		
 	@Override
 	/** Author: Siddhant Goenka */
 	public String toString() {

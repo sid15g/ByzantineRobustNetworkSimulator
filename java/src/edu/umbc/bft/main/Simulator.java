@@ -54,12 +54,17 @@ public class Simulator {
 			for( int i=1; i<=total; i++ )		{
 				
 				String nlinks = "links." + i;
-				String[] links = CoreUtils.getProperties(nlinks).trim().split(comma);
+				String temp = CoreUtils.getProperties(nlinks);
+				String[] links = temp!=null?temp.trim().split(comma):null;
 				
 				if( links!=null && links.length==icount )	{
-					Simulator.builder.connect(i, links);					
+					if( Simulator.builder.connect(i, links) == false )	{
+						Logger.sysLog(LogValues.fatal, Simulator.class.getName(), " Link Connection Error " );
+						success = false;
+						break;	
+					}
 				}else	{
-					Logger.sysLog(LogValues.fatal, Simulator.class.getName(), " Error connecting Switch"+ (i+1) +" : Links information not found | Exiting application... " );
+					Logger.sysLog(LogValues.fatal, Simulator.class.getName(), " Error connecting Node"+ i +" | Links information not found | Exiting application... " );
 					success = false;
 					break;
 				}
@@ -67,13 +72,13 @@ public class Simulator {
 
 		}catch(Exception e) {
 			Logger.sysLog(LogValues.fatal, Simulator.class.getName(), Logger.getStack(e) );
-			Logger.sysLog(LogValues.fatal, Simulator.class.getName(), " Exiting application... " );
+			Logger.sysLog(LogValues.info, Simulator.class.getName(), " Exiting application... " );
 			success = false;
 		}//end of try catch
 		
 		
 		if( success )		{
-			Logger.sysLog(LogValues.info, Simulator.class.getName(), " Network setup done... " );
+			Logger.sysLog(LogValues.info, Simulator.class.getName(), " Network setup complete... " );
 			Simulator.builder.dump();
 			Simulator.cleaner.setSwitches(threads);
 			Simulator.simulate(threads);

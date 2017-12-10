@@ -1,17 +1,20 @@
 package edu.umbc.bft.net.bean;
 
-import java.net.InetAddress;
+import edu.umbc.bft.secure.RSAPub;
 
-public class NeighborDetail implements Comparable<IPAddress> {
+public class NeighborDetail		{
 	
-	private String name;
 	private IPAddress ip;
-	private float cost;
+	private String name;
+	private RSAPub key;
 	
-	public NeighborDetail(String name, InetAddress neighbour, double cost) {
+	public NeighborDetail(String name, RSAPub key)		{
 		this.name = name;
-		this.ip = new IPAddress(neighbour);
-		this.cost = Double.valueOf(cost).floatValue();
+		this.key = key;
+	}//End of constructor
+	
+	public NeighborDetail(String name)		{
+		this(name, null);
 	}//End of constructor
 	
 	
@@ -19,36 +22,38 @@ public class NeighborDetail implements Comparable<IPAddress> {
 		return this.name;
 	}
 	public byte[] getId() {
-		return this.ip.getBytes();
+		if( this.ip != null )
+			return this.ip.getBytes();
+		return null;
 	}
 	public String getIPv4() {
-		return this.ip.toString();
+		if( this.ip != null )
+			return this.ip.toString();
+		else
+			return null;
 	}
-	public float getCost() {
-		return this.cost;
+	public RSAPub getKey() {
+		return this.key;
 	}
-	
-	@Override
-	public int compareTo(IPAddress o) {
-		if( o!=null && o.equals(this.ip))
-			return 0;
-		else	{
-			return this.ip.compareTo(o.getBytes());
-		}
+	public void setIPAddress(IPAddress ip) {
+		this.ip = ip;
+	}
+	public void setKey(RSAPub key) {
+		this.key = key;
 	}
 	
 	@Override
 	public boolean equals(Object obj) {
 		if( obj instanceof NeighborDetail )	{
 			NeighborDetail n = (NeighborDetail)obj;
-			return n.getIPv4().equals(this.getIPv4());
+			return n.getName().equals(this.getName());
 		}
 		return false;
 	}
 	
 	@Override
 	public String toString() {
-		return "["+ this.name +","+ this.ip.toString() + ","+ String.valueOf(this.cost) +"]";
+		return "["+ this.name +","+ this.key.toString() +"]";
 	}
 
 }

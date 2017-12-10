@@ -7,7 +7,7 @@ public final class RSAPub	{
 	private RSA key;
 	
 	RSAPub(RSA r) {
-		this.key = r;
+		this.key = new RSA(r);
 	}//end of constructor
 	
 	public final String encrypt(String str)	{
@@ -35,7 +35,7 @@ public final class RSAPub	{
 	
 	@Override
 	public String toString() {
-		return this.key.toString();
+		return this.key.toString().substring(0, 121);
 	}
 	
 	@Override

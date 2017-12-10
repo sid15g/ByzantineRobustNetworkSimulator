@@ -7,6 +7,9 @@ import edu.umbc.bft.net.packet.Packet;
 public interface Switch	extends Node	{
 	
 	public void init();
+	public void ipDump();
+	public long getSequenceNo();
+	
 	public void forward(Interface src, Packet e);
 	public void addRoute(IPAddress src, IPAddress dest, Interface i);
 	public void deleteRoute(IPAddress src, IPAddress dest, Interface i);

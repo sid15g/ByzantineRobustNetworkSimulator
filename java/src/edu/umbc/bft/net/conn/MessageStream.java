@@ -28,13 +28,12 @@ public class MessageStream extends LinkedBlockingQueue<Packet> {
 		this.dropRate = dropRate;
 	}//End of constructor
 	
-	
 	@Override
-	public final boolean add(Packet e) {
+	public final boolean add(Packet e)	{
 		if( rand.nextDouble() >= this.dropRate )	{
 			return super.add(e);
 		}else	{
-			Logger.sysLog(LogValues.info, this.getClass().getName(), " Network error: Packet dropped ");
+			Logger.sysLog(LogValues.info, this.getClass().getName(), " Network error: Packet dropped --> ("+ e.dscp() +")" );
 			return false;
 		}
 	}	

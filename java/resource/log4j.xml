@@ -5,7 +5,7 @@
 
 	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern" value="%5p %d{ISO8601} [%t][%x] %c - %m%n" />
+			<param name="ConversionPattern" value="%5p %d{ISO8601} [%t] %c{1} - %m%n" />
 		</layout>
 	</appender>
 	<appender name="bftNetwork" class="org.apache.log4j.rolling.RollingFileAppender">
@@ -19,7 +19,7 @@
 			<param name="MaxFileSize" value="250000000" />				<!-- 250MB -->
 		</triggeringPolicy>
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="ConversionPattern" value="%5p %d{ISO8601} [%t][%x] %c:%L - %m%n" />
+			<param name="ConversionPattern" value="%5p %d{ISO8601} [%t] %c{1}:%L - %m%n" />
 		</layout>
 	</appender>
 

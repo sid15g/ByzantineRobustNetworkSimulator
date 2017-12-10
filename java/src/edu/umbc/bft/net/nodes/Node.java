@@ -7,7 +7,6 @@ import edu.umbc.bft.secure.RSAPub;
 public interface Node extends Runnable {
 	
 	public RSAPub getPublicKey();
-	public long getSequenceNo();
 	public String getName();
 	public void shutdown();
 	

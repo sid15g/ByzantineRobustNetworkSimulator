@@ -1,25 +1,30 @@
 package edu.umbc.bft.net.nodes.abs;
 
-import java.util.Set;
+import java.util.Map;
 
 import edu.umbc.bft.secure.RSAPub;
+import edu.umbc.bft.util.CoreUtils;
 
 public abstract class AbstractTrustedNodeImpl extends AbstractSwitchImpl	{
 
-	private Set<RSAPub> publicKeyList;
+	private Map<String, RSAPub> publicKeyList;
 	
-	public AbstractTrustedNodeImpl(Set<RSAPub> pkl) {
+	public AbstractTrustedNodeImpl(Map<String, RSAPub> pkl) {
 		this.publicKeyList = pkl;
 	}//End of constructor
 	
-	protected Set<RSAPub> getPublicKeyList() {
+	protected Map<String, RSAPub> getPublicKeyList() {
 		return this.publicKeyList;
 	}
+	protected String getPublicKeyListAsJson() {
+		return CoreUtils.GSON.toJson(this.publicKeyList);
+	}
 	
-	protected boolean addPublicKey(RSAPub key)	{
-		if( key!=null )
-			return this.publicKeyList.add(key);
-		else
+	protected boolean addPublicKey(String nodeId, RSAPub key)	{
+		if( key!=null && nodeId!=null )	{
+			this.publicKeyList.put(nodeId, key);
+			return true;
+		}else
 			return false;
 	}
 	

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Set;
 
 import edu.umbc.bft.factory.NameGenerator;
-import edu.umbc.bft.net.bean.NodeManager;
 import edu.umbc.bft.net.conn.Interface;
 import edu.umbc.bft.net.conn.Link;
 import edu.umbc.bft.net.conn.LinkHandler;
@@ -23,7 +22,6 @@ public abstract class AbstractNodeImpl implements Node {
 	
 	private String name;
 	private RSAPriv privateKey;
-	protected NodeManager manager;
 	private Set<Interface> ports;
 	private List<LinkHandler> handlers;
 	private volatile boolean running, stopped;
@@ -34,7 +32,6 @@ public abstract class AbstractNodeImpl implements Node {
 		this.ports = new HashSet<Interface>();
 		this.privateKey = KeyStore.getNewKey();
 		this.handlers = new ArrayList<LinkHandler>();
-		this.manager = new NodeManager(this.name, this.privateKey);
 	}//End Of Constructor
 	
 	@Override
@@ -48,14 +45,7 @@ public abstract class AbstractNodeImpl implements Node {
 	public RSAPub getPublicKey() {
 		return this.privateKey.getPublicKey();
 	}
-	@Override
-	public long getSequenceNo() {
-		return this.manager.getSequenceNo();
-	}
-	
-	protected long getNextSequenceNo() {
-		return this.manager.getNextSequenceNo();
-	}
+
 	protected final String subLog()	{
 		return "["+ this.name +"]  ";
 	}
@@ -80,7 +70,14 @@ public abstract class AbstractNodeImpl implements Node {
 	public boolean hasPhysicalPort(Interface i) {
 		return this.ports.contains(i);
 	}
-
+	protected String[] getIPs(){
+		String []ips = new String[this.ports.size()];
+		Object []arr = this.ports.toArray();
+		for( int i=0; i<this.ports.size(); i++ )
+			ips[i] = ((Interface)arr[i]).getIPv4();
+		return ips;
+	}
+	
 	@Override
 	public final boolean attach(Interface i, Link l)	{
 		if( this.ports.contains(i) )	{
@@ -101,11 +98,12 @@ public abstract class AbstractNodeImpl implements Node {
 		final int size = this.handlers.size();
 		
 		while( this.running )	{
+			
 			LinkHandler handler = this.handlers.get(i);
 			Packet p = handler.read();
 			i = (i+1)%size;
 			
-			if( p != null )
+			if( p!=null )
 				this.execute(handler.getSource(), p);
 			
 		}//End of loop
@@ -127,9 +125,9 @@ public abstract class AbstractNodeImpl implements Node {
 		
 		final int size = this.handlers.size();
 		
-		for( int i=0; i<size; i++ )	{
+		for( int i=0; i<size; i++ )		{
 			LinkHandler handler = this.handlers.get(i);
-
+			
 			if( src==null || handler.isSource(src) == false )	{
 				handler.send(p);
 			}

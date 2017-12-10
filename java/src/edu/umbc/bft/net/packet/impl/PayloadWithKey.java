@@ -20,6 +20,7 @@ public abstract class PayloadWithKey implements Payload	{
 		this.signature = key.sign(this.toString());
 	}//end of method
 	
+	/** verify the source */
 	public final boolean verifySignature() {
 		return this.key.verify(this.signature, this.toString());
 	}
@@ -33,7 +34,7 @@ public abstract class PayloadWithKey implements Payload	{
 	
 	@Override
 	public String toString() {
-		return new String(this.toByteArray()).trim();
+		return new String(this.toByteArray());
 	}
 	
 }

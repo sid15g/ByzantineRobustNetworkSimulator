@@ -27,18 +27,19 @@ import edu.umbc.bft.util.Logger;
 
 public class NetworkBuilder		{
 	
+	private Map<String, RSAPub> publicKeyList;
 	private Map<Integer, Switch> switches;
-	private Set<RSAPub> publicKeyList;
+	private Set<String> links;
 	private IPFactory factory;
 	private Random rand;
 	
 	NetworkBuilder()	{
 		this.rand = new Random();
 		this.factory = new IPFactory();
-		this.publicKeyList = new HashSet<RSAPub>();
+		this.links = new HashSet<String>();
 		this.switches = new HashMap<Integer, Switch>();
+		this.publicKeyList = new HashMap<String, RSAPub>();
 	}//end of constructor
-	
 	
 	public List<Thread> createSwitches(int total, int tnodes, int faulty)	{
 		
@@ -71,7 +72,7 @@ public class NetworkBuilder		{
 			
 			RSAPub key = s.getPublicKey();	
 			this.switches.put(id++, s);
-			this.publicKeyList.add(key);
+			this.publicKeyList.put(s.getName(), key);
 			
 			list.add(new Thread(s));
 			
@@ -87,6 +88,8 @@ public class NetworkBuilder		{
 		if( this.switches.containsKey(nodeId) == false  )
 			throw InvalidNodeIDException.invalidNodeId(nodeId);
 		
+		boolean res = true;
+		
 		for( int j=0; links!=null && j<links.length; j++ )	{
 			
 			int nid = Integer.parseInt(links[j]);
@@ -96,11 +99,11 @@ public class NetworkBuilder		{
 			else if( this.switches.containsKey(nid) == false )
 				throw InvalidLinkException.invalidLink(nodeId, nid);
 			else
-				return this.connect(nodeId, nid);
+				res &= this.connect(nodeId, nid);
 			
 		}//end of loop
 		
-		return false;
+		return res;
 		
 	}//end of method
 	
@@ -110,9 +113,18 @@ public class NetworkBuilder		{
 		Switch s1 = this.switches.get(nid1);
 		Switch s2 = this.switches.get(nid2);
 		
-		if( s1!=null && s2!=null )
-			return this.connect(s1, s2);
-		else
+		if( s1!=null && s2!=null )	{
+			
+			String link = s2.getName() + s1.getName();
+			
+			if( this.links.contains(link)==false )
+				return this.connect(s1, s2);
+			else	{
+				Logger.sysLog(LogValues.debug, this.getClass().getName(), " Already Exists: ["+ s1.getName() +"<-->"+ s2.getName() +"]" );
+				return true;
+			}
+			
+		}else
 			return false;
 		
 	}//end of method
@@ -134,6 +146,10 @@ public class NetworkBuilder		{
 			
 			s2.addPhysicalPort(i2);
 			res &= s2.attach(i2, l);
+			
+			Logger.sysLog(LogValues.info, this.getClass().getName(), "Link: ["+ s1.getName() +"<-->"+ s2.getName() +"]" );
+			this.links.add(s1.getName() + s2.getName());
+			this.links.add(s2.getName() + s1.getName());
 			
 			return res;
 		}//end of null check

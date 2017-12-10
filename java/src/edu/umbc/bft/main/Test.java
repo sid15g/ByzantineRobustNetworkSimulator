@@ -26,8 +26,8 @@ public class Test {
 		//Test.testLinkFactory();
 		//Test.testForwardingTable();
 		//Test.testIPFactory();
-		//Test.testKey();
-		Test.testPayloads();
+		Test.testKey();
+		//Test.testPayloads();
 	}//End of main
 	
 	public static void testNames() {
@@ -103,12 +103,17 @@ public class Test {
 		RSAPriv priv = KeyStore.getNewKey();
 		RSAPub pub = priv.getPublicKey();
 		
-		String m = "siddhant goenka";
+		Identification i = new Identification("S2");
+		i.addSignature(priv);
+		Payload p = i;
+		String m = p.toString();
+		System.out.println(m.length());
+		System.out.println(m);
 		String c = pub.encrypt(m);
 		System.out.println(c);
 		String dm = priv.decrypt(c);
 		System.out.println(dm);
-		
+		System.out.println("===");
 		c = priv.sign(m);
 		System.out.println(c);
 		System.out.println( pub.verify(c, m) );

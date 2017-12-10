@@ -33,7 +33,7 @@ public class FloodHeader implements Header {
 	}
 	@Override
 	public String getSource() {
-		return this.source.toString();
+		return this.source;
 	}
 	
 	@Override

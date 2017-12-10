@@ -17,7 +17,7 @@ public class FullDuplexLink implements Link	{
 	public FullDuplexLink(Interface i1, Interface i2, double dropRate)	{
 		this.inf1 = i1;
 		this.inf2 = i2;
-		this.bandwidth = 64.00f;
+		this.bandwidth = 64.000f;
 		this.dropRate = Double.valueOf(dropRate).floatValue();
 	}//End of constructor
 

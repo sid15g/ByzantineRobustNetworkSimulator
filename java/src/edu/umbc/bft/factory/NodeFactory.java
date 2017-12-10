@@ -1,6 +1,6 @@
 package edu.umbc.bft.factory;
 
-import java.util.Set;
+import java.util.Map;
 
 import edu.umbc.bft.net.nodes.Switch;
 import edu.umbc.bft.net.nodes.impl.FaultySwitch;
@@ -25,7 +25,7 @@ public class NodeFactory {
 	}//End Of Method
 	
 	
-	public static Switch createTrustedNode(Set<RSAPub> pkl, boolean faulty)	{
+	public static Switch createTrustedNode(Map<String, RSAPub> pkl, boolean faulty)	{
 		if( faulty )
 			return new FaultyTrustedNode(pkl, NodeFactory.nodeCount++);
 		else
