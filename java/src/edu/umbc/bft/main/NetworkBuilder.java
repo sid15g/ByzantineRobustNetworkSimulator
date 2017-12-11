@@ -20,14 +20,14 @@ import edu.umbc.bft.net.conn.Eth;
 import edu.umbc.bft.net.conn.Interface;
 import edu.umbc.bft.net.conn.Link;
 import edu.umbc.bft.net.nodes.Switch;
+import edu.umbc.bft.net.nodes.impl.TrustedNode;
 import edu.umbc.bft.secure.RSAPub;
 import edu.umbc.bft.util.LogValues;
 import edu.umbc.bft.util.Logger;
 
-
 public class NetworkBuilder		{
 	
-	private Map<String, RSAPub> publicKeyList;
+	private Map<String, RSAPub> publicKeyList, trustedKeyList;
 	private Map<Integer, Switch> switches;
 	private Set<String> links;
 	private IPFactory factory;
@@ -39,6 +39,7 @@ public class NetworkBuilder		{
 		this.links = new HashSet<String>();
 		this.switches = new HashMap<Integer, Switch>();
 		this.publicKeyList = new HashMap<String, RSAPub>();
+		this.trustedKeyList = new HashMap<String, RSAPub>();
 	}//end of constructor
 	
 	public List<Thread> createSwitches(int total, int tnodes, int faulty)	{
@@ -47,6 +48,7 @@ public class NetworkBuilder		{
 		
 		float tprob = (float)tnodes/(float)total;
 		float fprob = (float)faulty/(float)total;
+//		int ftnodeMax = tnodes/3;		
 		boolean faultynode = false;
 		int switches = total - tnodes;
 		int id = 1;
@@ -61,18 +63,23 @@ public class NetworkBuilder		{
 				faulty--;
 			}
 			
+			//TODO add limit to faulty trusted nodes (30%)
+			
 			if( rand.nextFloat()<tprob && tnodes>0 )	{
-				s = NodeFactory.createTrustedNode(this.publicKeyList, faultynode);
+				s = NodeFactory.createTrustedNode(this.publicKeyList, this.trustedKeyList, faultynode);
 				tnodes--;
 			}else if( switches > 0 )	{
-				s = NodeFactory.createSwitch(faultynode);
+				s = NodeFactory.createSwitch(this.trustedKeyList, faultynode);
 				switches--;
 			}else
-				s = NodeFactory.createTrustedNode(this.publicKeyList, faultynode);
+				s = NodeFactory.createTrustedNode(this.publicKeyList, this.trustedKeyList, faultynode);
 			
-			RSAPub key = s.getPublicKey();	
+			RSAPub key = s.getPublicKey();
 			this.switches.put(id++, s);
 			this.publicKeyList.put(s.getName(), key);
+			
+			if( s instanceof TrustedNode )
+				this.trustedKeyList.put(s.getName(), key);
 			
 			list.add(new Thread(s));
 			
@@ -120,7 +127,7 @@ public class NetworkBuilder		{
 			if( this.links.contains(link)==false )
 				return this.connect(s1, s2);
 			else	{
-				Logger.sysLog(LogValues.debug, this.getClass().getName(), " Already Exists: ["+ s1.getName() +"<-->"+ s2.getName() +"]" );
+				Logger.sysLog(LogValues.debug, this.getClass().getName(), " Already Exists: ["+ s1.getName() +" <--> "+ s2.getName() +"]" );
 				return true;
 			}
 			
@@ -147,7 +154,7 @@ public class NetworkBuilder		{
 			s2.addPhysicalPort(i2);
 			res &= s2.attach(i2, l);
 			
-			Logger.sysLog(LogValues.info, this.getClass().getName(), "Link: ["+ s1.getName() +"<-->"+ s2.getName() +"]" );
+			Logger.sysLog(LogValues.info, this.getClass().getName(), "Link: ["+ s1.getName() +" <--> "+ s2.getName() +"]" );
 			this.links.add(s1.getName() + s2.getName());
 			this.links.add(s2.getName() + s1.getName());
 			

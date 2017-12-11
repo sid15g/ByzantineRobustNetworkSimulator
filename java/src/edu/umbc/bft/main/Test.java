@@ -1,6 +1,8 @@
 package edu.umbc.bft.main;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import edu.umbc.bft.exception.IPNotAvailableException;
@@ -15,6 +17,7 @@ import edu.umbc.bft.net.conn.Interface;
 import edu.umbc.bft.net.conn.Link;
 import edu.umbc.bft.net.packet.Payload;
 import edu.umbc.bft.net.packet.payload.Identification;
+import edu.umbc.bft.net.packet.payload.PublicKeyList;
 import edu.umbc.bft.secure.KeyStore;
 import edu.umbc.bft.secure.RSAPriv;
 import edu.umbc.bft.secure.RSAPub;
@@ -28,6 +31,7 @@ public class Test {
 		//Test.testIPFactory();
 		Test.testKey();
 		//Test.testPayloads();
+		//Test.testMapEquals();
 	}//End of main
 	
 	public static void testNames() {
@@ -106,21 +110,47 @@ public class Test {
 		Identification i = new Identification("S2");
 		i.addSignature(priv);
 		Payload p = i;
-		String m = p.toString();
-		System.out.println(m.length());
-		System.out.println(m);
-		String c = pub.encrypt(m);
+		String m = p.toString();	
+//		System.out.println(m.length());
+//		System.out.println(m);
+//		String c = pub.encrypt(m);
+//		System.out.println(c);
+//		System.out.println(c.length());
+//		String dm = priv.decrypt(c);
+//		System.out.println(dm);
+		System.out.println("===");
+		String c = priv.sign(m);
 		System.out.println(c);
-		String dm = priv.decrypt(c);
-		System.out.println(dm);
+		System.out.println( pub.verify(c, m) );
+
+//		System.out.println(pub.toString());
+		
+		System.out.println("--------------------------------------");
+		
+		RSAPub k1 = KeyStore.getNewKey().getPublicKey();
+		RSAPub k2 = KeyStore.getNewKey().getPublicKey();
+		RSAPub k3 = KeyStore.getNewKey().getPublicKey();
+		
+		Map<String, RSAPub> m1 = new HashMap<String, RSAPub>();
+		m1.put("1", k1);
+		m1.put("2", k2);
+		m1.put("3", k3);
+
+		PublicKeyList pkl = new PublicKeyList(m1);
+		pkl.addSignature(priv);
+		p = pkl;
+		m = p.toString();	
+//		System.out.println(m.length());
+//		System.out.println(m);
+//		c = pub.encrypt(m);
+//		System.out.println(c);
+//		dm = priv.decrypt(c);
+//		System.out.println(dm);
 		System.out.println("===");
 		c = priv.sign(m);
 		System.out.println(c);
 		System.out.println( pub.verify(c, m) );
-
-		RSAPriv priv2 = KeyStore.getNewKey();
-		System.out.println(pub.toString());
-		System.out.println(priv2.getPublicKey().toString());
+		
 		
 	}//end of method
 	
@@ -130,4 +160,31 @@ public class Test {
 		Payload p = new Identification("S5");
 		System.out.println(p.toString());
 	}
+	
+	public static void testMapEquals() {
+
+		RSAPub k1 = KeyStore.getNewKey().getPublicKey();
+		RSAPub k2 = KeyStore.getNewKey().getPublicKey();
+		RSAPub k3 = KeyStore.getNewKey().getPublicKey();
+		
+		Map<String, RSAPub> m1 = new HashMap<String, RSAPub>();
+		m1.put("1", k1);
+		m1.put("2", k2);
+		
+		
+		Map<String, RSAPub> m2 = new HashMap<String, RSAPub>();
+		m2.put("1", k1);
+		m2.put("2", k2);
+		
+		System.out.println(m1.equals(m2));
+		m2.put("2", k3);
+		System.out.println(m1.equals(m2));
+		m2.put("2", k2);
+		m2.put("3", k3);
+		System.out.println(m1.equals(m2));
+		m1.put("3", k3);
+		System.out.println(m1.equals(m2));
+		
+	}
+	
 }

@@ -1,19 +1,22 @@
 package edu.umbc.bft.net.nodes.impl;
 
+import java.util.Map;
+
 import edu.umbc.bft.net.conn.Interface;
 import edu.umbc.bft.net.nodes.bzt.ByzantineSwitch;
 import edu.umbc.bft.net.packet.Packet;
+import edu.umbc.bft.secure.RSAPub;
 import edu.umbc.bft.util.LogValues;
 import edu.umbc.bft.util.Logger;
 
 public class FaultySwitch extends GeneralSwitch	implements ByzantineSwitch	{
 
-	public FaultySwitch() {
-		super();
+	public FaultySwitch(Map<String, RSAPub> tkl) {
+		super(tkl);
 	}//End of Constructor
 	
-	public FaultySwitch(int id)	{
-		this();
+	public FaultySwitch(Map<String, RSAPub> tkl, int id)	{
+		this(tkl);
 		this.setName("FS"+ id);
 	}//End of Constructor
 	
@@ -21,7 +24,8 @@ public class FaultySwitch extends GeneralSwitch	implements ByzantineSwitch	{
 	@Override
 	protected final void execute(Interface i, Packet p) {
 		Logger.sysLog(LogValues.info, this.getClass().getName(), this.subLog() +" Received: "+ p.dscp() );
-		this.inject(p);
+		super.execute(i, p);
+		//this.inject(p);
 	}
 	
 	@Override

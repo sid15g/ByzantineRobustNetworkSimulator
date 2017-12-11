@@ -4,11 +4,16 @@ import java.util.Arrays;
 import java.util.List;
 
 import edu.umbc.bft.net.bean.NeighborDetail;
-import edu.umbc.bft.net.packet.Payload;
+import edu.umbc.bft.net.packet.impl.PayloadWithKey;
 
-public class LinkState implements Payload {
+public class LinkState extends PayloadWithKey {
 
 	private List<NeighborDetail> neighborsList;
+		
+	public LinkState(List<NeighborDetail> neighbors) {
+		super();
+		this.neighborsList = neighbors;
+	}
 	
 	public List<NeighborDetail> getNeighborsList() {
 		return this.neighborsList;
@@ -21,7 +26,7 @@ public class LinkState implements Payload {
 	
 	@Override
 	public String toString() {
-		return Arrays.toString(this.neighborsList.toArray()).trim();
+		return Arrays.toString(this.neighborsList.toArray());
 	}
 	
 }

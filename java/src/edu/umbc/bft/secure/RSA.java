@@ -27,12 +27,15 @@ package edu.umbc.bft.secure;
  *
  ******************************************************************************/
 
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
 
 /** Should not be public */
-final class RSA	{
+final class RSA	implements Serializable {
+	
+	private static final long serialVersionUID = -390566504910310853L;
 	
 	private final static BigInteger one      = new BigInteger("1");
 	private final static SecureRandom random = new SecureRandom();

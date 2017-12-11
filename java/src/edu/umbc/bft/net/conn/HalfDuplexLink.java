@@ -11,7 +11,7 @@ public class HalfDuplexLink implements Link	{
 	private float bandwidth;				/** packets/second */
 	
 	public HalfDuplexLink(Interface src, Interface dest)	{
-		this(src, dest, 0.03);						/** 3% */
+		this(src, dest, Link.DefaultDropRate);
 	}//End of constructor
 
 	public HalfDuplexLink(Interface src, Interface dest, double dropRate)	{

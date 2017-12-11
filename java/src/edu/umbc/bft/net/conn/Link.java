@@ -4,6 +4,8 @@ import edu.umbc.bft.net.nodes.Node;
 
 public interface Link	{
 	
+	public final float DefaultDropRate = 0.01F;				/** 1% */
+	
 	public Interface[] getInterfaces();
 	
 	public void setBandwidth(double bandwidth);
@@ -12,10 +14,16 @@ public interface Link	{
 	public double getDropRate();
 	public double getBandwidth();
 	
+	public default void increaseCost() {
+		double dr = this.getDropRate();
+		dr *= 2;
+		this.setDropRate(dr);
+	}
+	
 	public LinkHandler getHandler(Node n);
 	
 	public default double getLinkState()	{
-		return getBandwidth()*(1-getDropRate());
+		return getBandwidth()*getDropRate();
 	};
 	
 	public default double compareState(Link l)	{

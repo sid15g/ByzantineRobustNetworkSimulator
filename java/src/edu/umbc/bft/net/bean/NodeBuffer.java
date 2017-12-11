@@ -17,28 +17,29 @@ import edu.umbc.bft.util.Logger;
  **/
 public class NodeBuffer	{
 
-	private String nodeId;
 	private long lastSeqNo;
 	private Payload lastMessage;
+	private String bufNode, srcNode;
 	private List<NeighborDetail> neighbors;
 	
-	NodeBuffer(String nodeId, Packet p)	{
-		this.nodeId = nodeId;
+	NodeBuffer(String srcNode, String bufNode, Packet p)	{
 		this.neighbors = null;
+		this.srcNode = srcNode;
+		this.bufNode = bufNode;
 		this.lastMessage = p.getPayload();
 		this.lastSeqNo = p.getHeader().getSequenceNumber();
 	}//end of constructor
 	
 	private final String sublog()	{
-		return "["+ this.nodeId +"] ";
+		return "["+ this.srcNode +","+ this.bufNode +"] ";
 	}
 	
 	boolean updateLastMessage(Packet p)		{
 		
 		if( this.isValid(p) == false )	{
-			Logger.sysLog(LogValues.info, this.getClass().getName(), this.sublog() +"  Packet Dropped(Old Sequence Number) --> "+ p.dscp() );
+			Logger.sysLog(LogValues.info, this.getClass().getName(), this.sublog() +"  Packet dropped(Old sequence number) --> "+ p.dscp() );
 		}else if ( this.checkPayload(p) == false )	{
-			Logger.sysLog(LogValues.info, this.getClass().getName(), this.sublog() +" Packet Dropped(Invalid Signature) --> "+ p.dscp() );
+			Logger.sysLog(LogValues.info, this.getClass().getName(), this.sublog() +" Packet dropped(Tampered packet suspected) --> "+ p.dscp() );
 		}else if( p!=null )	{
 			
 			this.lastSeqNo = p.getHeader().getSequenceNumber();
@@ -50,7 +51,7 @@ public class NodeBuffer	{
 			return true;
 		}
 		return false;
-	}//end of method
+	}
 	
 	boolean isValid(Packet p)	{
 		return p!=null?this.lastSeqNo < p.getHeader().getSequenceNumber():false;

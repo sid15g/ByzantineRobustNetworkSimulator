@@ -17,19 +17,19 @@ public class NodeFactory {
 		NodeFactory.nodeCount = 1;
 	}
 	
-	public static Switch createSwitch(boolean faulty)	{
+	public static Switch createSwitch(Map<String, RSAPub> tkl, boolean faulty)	{
 		if( faulty )
-			return new FaultySwitch(NodeFactory.nodeCount++);
+			return new FaultySwitch(tkl, NodeFactory.nodeCount++);
 		else
-			return new GeneralSwitch(NodeFactory.nodeCount++);
+			return new GeneralSwitch(tkl, NodeFactory.nodeCount++);
 	}//End Of Method
 	
 	
-	public static Switch createTrustedNode(Map<String, RSAPub> pkl, boolean faulty)	{
+	public static Switch createTrustedNode(Map<String, RSAPub> pkl, Map<String, RSAPub> tkl, boolean faulty)	{
 		if( faulty )
-			return new FaultyTrustedNode(pkl, NodeFactory.nodeCount++);
+			return new FaultyTrustedNode(pkl, tkl, NodeFactory.nodeCount++);
 		else
-			return new TrustedNode(pkl, NodeFactory.nodeCount++);
+			return new TrustedNode(pkl, tkl, NodeFactory.nodeCount++);
 	}//End Of Method
 	
 }

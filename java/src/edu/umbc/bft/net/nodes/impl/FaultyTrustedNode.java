@@ -11,19 +11,20 @@ import edu.umbc.bft.util.Logger;
 
 public class FaultyTrustedNode extends TrustedNode implements ByzantineNode	{
 	
-	public FaultyTrustedNode(Map<String, RSAPub> pkl) {
-		super(pkl);
+	public FaultyTrustedNode(Map<String, RSAPub> pkl, Map<String, RSAPub> tkl) {
+		super(pkl, tkl);
 	}//End of Constructor
 	
-	public FaultyTrustedNode(Map<String, RSAPub> pkl, int id) {
-		this(pkl);
+	public FaultyTrustedNode(Map<String, RSAPub> pkl, Map<String, RSAPub> tkl, int id) {
+		this(pkl, tkl);
 		this.setName("FTN"+ id);
 	}//End of Constructor
 	
 	@Override
 	protected final void execute(Interface i, Packet p) {
 		Logger.sysLog(LogValues.info, this.getClass().getName(), this.subLog() +" Received: "+ p.dscp() );
-		this.inject(p);
+		super.execute(i, p);
+		//this.inject(p);
 	};
 	
 	@Override

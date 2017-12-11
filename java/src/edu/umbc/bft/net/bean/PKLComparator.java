@@ -9,35 +9,54 @@ import edu.umbc.bft.util.Logger;
 
 public class PKLComparator<K, V>	{
 
+	private String nodeName;
+	private Map<K, V> map;
 	private Random rand;
 	
-	public PKLComparator() {
+	public PKLComparator(String name) {
+		this.map = null;
+		this.nodeName = name;
 		this.rand = new Random();
 	}//end of constructor
 	
+	private final String sublog()	{
+		return "["+ this.nodeName +"] ";
+	}
 	
-	public boolean compare(Map<K, V> m1, Map<K, V> m2) {
-		if( m1!=null && m2!=null )	{
-			return m1.equals(m2);
-		}else if( m1==null && m2==null )
+	public void setMap(Map<K, V> map) {
+		this.map = map;
+	}
+	public Map<K, V> getMap() {
+		return this.map;
+	}
+	
+	public boolean compare(Map<K, V> m2) {
+		if( m2!=null )	{
+			return this.map.equals(m2);
+		}else if( this.map==null && m2==null )
 			return true;
 		else
 			return false;
 	}
 
-	public Map<K, V> tieBreaker(Map<K, V> m1, Map<K, V> m2) {
-		if( this.compare(m1, m2) == false )	{
+	public Map<K, V> tieBreaker(Map<K, V> m2) {
+		if( this.map==null && m2!=null )	{
+			this.map = m2;
+		}else if( this.compare(m2) == false )	{
+			Logger.sysLog(LogValues.info, this.getClass().getName(), this.sublog() +" TieBreaker - Public Key List " );
 			double val = this.rand.nextDouble();
-			return val>=0.5000000?m1:m2;
-		}else
-			return m1;
+			this.map = val>=0.5000000?this.map:m2;
+		}
+		return this.map;
 	}
 	
 	
 	/** Add elements in m2 (not in m1) to m1, but does not override any value */
-	public Map<K, V> safeUnion(Map<K, V> m1, Map<K, V> m2) {
+	public Map<K, V> safeUnion(Map<K, V> m2) {
 		
-		if( m2!=null && m1!=null )	{
+		if( this.map == null )	{
+			this.map = m2;
+		}else if( m2!=null )	{
 			
 			Iterator<K> iter = m2.keySet().iterator();
 			
@@ -46,17 +65,29 @@ public class PKLComparator<K, V>	{
 				K key = iter.next();
 				V val = m2.get(key);
 				
-				if( m1.containsKey(key) == false )
-					m1.put(key, val);
+				if( this.map.containsKey(key) == false )
+					this.map.put(key, val);
 				
-			}//end of loop
-			
-			return m1;
+			}//end of loop	
 			
 		}else	{
 			Logger.sysLog(LogValues.error, this.getClass().getName(), " Safe Union of maps failed " );
-			return null;
 		}
+		
+		return this.map;
+		
+	}//end of method
+	
+	
+	public boolean verify(K key, V value) {
+		
+		if( this.map!=null && this.map.containsKey(key) )	{
+			V val = this.map.get(key);
+			return val.equals(value);
+		}
+		
+		return false;
+		
 	}//end of method
 	
 }

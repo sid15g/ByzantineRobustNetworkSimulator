@@ -11,7 +11,7 @@ public class FullDuplexLink implements Link	{
 	private float bandwidth;				/** packets/second */
 	
 	public FullDuplexLink(Interface i1, Interface i2) {
-		this(i1, i2, 0.03);						/** 3% */
+		this(i1, i2, Link.DefaultDropRate);
 	}//end of constructor
 	
 	public FullDuplexLink(Interface i1, Interface i2, double dropRate)	{

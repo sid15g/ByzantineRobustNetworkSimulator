@@ -12,8 +12,10 @@ import edu.umbc.bft.net.packet.Payload;
 import edu.umbc.bft.net.packet.impl.DefaultHeader;
 import edu.umbc.bft.net.packet.impl.DefaultPacket;
 import edu.umbc.bft.net.packet.impl.FloodHeader;
+import edu.umbc.bft.net.packet.impl.PayloadWithKey;
 import edu.umbc.bft.net.packet.payload.Datagram;
 import edu.umbc.bft.net.packet.payload.Identification;
+import edu.umbc.bft.net.packet.payload.LinkState;
 import edu.umbc.bft.secure.RSAPriv;
 import edu.umbc.bft.secure.RSAPub;
 import edu.umbc.bft.util.LogValues;
@@ -21,17 +23,19 @@ import edu.umbc.bft.util.Logger;
 
 public class SwitchManager implements PacketFactory	{
 	
-	private Map<String, RSAPub> publicKeyList;
+	private Map<String, RSAPub> trustedKeyList;
 	private List<NeighborDetail> myNeighbors;
 	private Map<String, NodeBuffer> buffer;
 	private long currentSequenceNo;
+	private byte keyListCount;
 	private String name;
 	private RSAPriv key;
 	
 	public SwitchManager(String name, RSAPriv key) {
 		this.key = key;
 		this.name = name;
-		this.publicKeyList = null;
+		this.keyListCount = 0;
+		this.trustedKeyList = null;
 		this.currentSequenceNo = 1L;
 		this.buffer = new HashMap<String, NodeBuffer>();
 		this.myNeighbors = new ArrayList<NeighborDetail>();
@@ -41,6 +45,10 @@ public class SwitchManager implements PacketFactory	{
 		return "["+ this.name +"] ";
 	}
 	
+	@Override
+	public String getSourceNodeId() {
+		return this.name;
+	}
 	public void setName(String name) {
 		this.name = name;
 	}
@@ -49,6 +57,16 @@ public class SwitchManager implements PacketFactory	{
 	}
 	public long getNextSequenceNo() {
 		return this.currentSequenceNo++;
+	}
+	public void increaseKeyListCount() {
+		this.keyListCount++;
+		Logger.sysLog(LogValues.debug, this.getClass().getName(), this.sublog() +" COUNT "+ this.keyListCount );
+	}
+	public void resetKeyListCount() {
+		this.keyListCount = 0;
+	}
+	public byte getKeyListCount() {
+		return this.keyListCount;
 	}
 	
 	public int getBufferSize() {
@@ -71,7 +89,7 @@ public class SwitchManager implements PacketFactory	{
 		if( nodeId!=null && this.buffer.containsKey(nodeId) )	{
 			return this.buffer.get(nodeId).updateLastMessage(p);
 		}else if( nodeId!=null && p!=null )	{
-			NodeBuffer buf = new NodeBuffer(nodeId, p);
+			NodeBuffer buf = new NodeBuffer(this.name, nodeId, p);
 			this.buffer.put(nodeId, buf);
 			return true;
 		}
@@ -79,6 +97,27 @@ public class SwitchManager implements PacketFactory	{
 		
 	}//end of method
 	
+	public boolean verifyPayloadSignature(Packet p)	{
+		return this.verifyPayloadSignature(p, this.trustedKeyList);
+	}
+	public boolean verifyPayloadSignature(Packet p, Map<String, RSAPub> map)	{
+		if( p==null )	{
+			Logger.sysLog(LogValues.error, this.getClass().getName(), this.sublog() +" Cannot verify payload - packet not found " );
+			return false;
+		}else if( map==null )	{
+			Logger.sysLog(LogValues.error, this.getClass().getName(), this.sublog() +" Cannot verify payload - key list not found " );
+			return false;
+		}
+			
+		String src = p.getHeader().getSource();
+		RSAPub key = map.get(src);
+		
+		if( key!=null && p.getPayload() instanceof PayloadWithKey )		{
+			PayloadWithKey payload = (PayloadWithKey)p.getPayload();
+			return payload.verifySignature(key);
+		}else
+			return false;
+	}
 	
 	public boolean addNeighborDetail( String nodeId, RSAPub key )	{
 		
@@ -107,11 +146,14 @@ public class SwitchManager implements PacketFactory	{
 		return arr;
 	}
 	
-	public Map<String, RSAPub> getPublicKeyList() {
-		return this.publicKeyList;
+	public int getTrustedNodeCount() {
+		return this.trustedKeyList.size();
 	}
-	public void setPublicKeyList(Map<String, RSAPub> publicKeyList) {
-		this.publicKeyList = publicKeyList;
+	public Map<String, RSAPub> getTrustedKeyList() {
+		return this.trustedKeyList;
+	}
+	public void setTrustedKeyList(Map<String, RSAPub> trustedKeyList) {
+		this.trustedKeyList = trustedKeyList;
 	}
 	
 	public DatagramRoute calculateRoute(String destNodeId) {
@@ -136,7 +178,7 @@ public class SwitchManager implements PacketFactory	{
 		Identification i = new Identification(this.name);
 		i.addSignature(this.key);
 		return this.createPacket(i);
-	}
+	}	
 	@Override
 	public Packet createDatagram(String data, DatagramRoute route)	{
 		Datagram d = new Datagram(data);
@@ -144,7 +186,12 @@ public class SwitchManager implements PacketFactory	{
 		d.addSignature(key);
 		return this.createPacket(d);
 	}
-
+	@Override
+	public Packet createLinkStatePacket() {
+		LinkState ls = new LinkState(this.myNeighbors);
+		ls.addSignature(this.key);
+		return this.createPacket(ls);
+	}
 	
 	public Packet createPacket(Payload p)	{
 		return this.createPacket(this.createFloodHeader(), p);

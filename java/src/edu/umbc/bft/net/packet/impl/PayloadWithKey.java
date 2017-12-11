@@ -20,9 +20,18 @@ public abstract class PayloadWithKey implements Payload	{
 		this.signature = key.sign(this.toString());
 	}//end of method
 	
-	/** verify the source */
+	
+	/** Verify that the content has not been changed during packet routing */
 	public final boolean verifySignature() {
 		return this.key.verify(this.signature, this.toString());
+	}
+	
+	/** 
+	 * Verify the source from the PKL provided by T.N.
+	 * Verify T.N. PKL from the keys node already have in initial configuration
+	 **/
+	public final boolean verifySignature(RSAPub key) {
+		return key.verify(this.signature, this.toString());
 	}
 	
 	public String getSignature() {

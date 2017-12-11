@@ -1,7 +1,6 @@
 package edu.umbc.bft.net.packet.payload;
 
 import edu.umbc.bft.net.packet.impl.PayloadWithKey;
-import edu.umbc.bft.secure.RSAPub;
 
 public class Identification extends PayloadWithKey	{
 
@@ -13,11 +12,6 @@ public class Identification extends PayloadWithKey	{
 	
 	public String getName() {
 		return this.name;
-	}
-	
-	/** verify source from PKL given by Trusted Node */
-	public boolean verifySignature(RSAPub key) {
-		return key.verify(this.signature, this.toString());
 	}
 	
 	@Override

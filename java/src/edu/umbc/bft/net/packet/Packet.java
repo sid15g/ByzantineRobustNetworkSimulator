@@ -29,9 +29,9 @@ public interface Packet	{
 		Header h = this.getHeader();
 		
 		if( h!=null && h instanceof FloodHeader )
-			return ptype +" : ["+ h.getSequenceNumber() +", "+ h.getSource() +"] ";
+			return "["+ ptype +"]["+ h.getSequenceNumber() +", "+ h.getSource() +"] ";
 		else if( h!=null )
-			return ptype +" : ["+ h.getSequenceNumber() +", "+ h.getSource() +", "+ h.getDestination() +"] ";
+			return "["+  ptype +"]["+ h.getSequenceNumber() +", "+ h.getSource() +", "+ h.getDestination() +"] ";
 		else
 			return "[]";
 		

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import edu.umbc.bft.factory.NameGenerator;
+import edu.umbc.bft.net.bean.InterfaceManager;
 import edu.umbc.bft.net.conn.Interface;
 import edu.umbc.bft.net.conn.Link;
 import edu.umbc.bft.net.conn.LinkHandler;
@@ -17,12 +18,14 @@ import edu.umbc.bft.secure.RSAPriv;
 import edu.umbc.bft.secure.RSAPub;
 import edu.umbc.bft.util.LogValues;
 import edu.umbc.bft.util.Logger;
+import edu.umbc.bft.util.Timeout;
 
 public abstract class AbstractNodeImpl implements Node {
 	
 	private String name;
 	private RSAPriv privateKey;
 	private Set<Interface> ports;
+	private InterfaceManager iManager;
 	private List<LinkHandler> handlers;
 	private volatile boolean running, stopped;
 	
@@ -32,7 +35,12 @@ public abstract class AbstractNodeImpl implements Node {
 		this.ports = new HashSet<Interface>();
 		this.privateKey = KeyStore.getNewKey();
 		this.handlers = new ArrayList<LinkHandler>();
+		this.iManager = new InterfaceManager(this, this.handlers);
 	}//End Of Constructor
+	
+	protected final String subLog()	{
+		return "["+ this.name +"]  ";
+	}
 	
 	@Override
 	public String getName() {
@@ -41,16 +49,17 @@ public abstract class AbstractNodeImpl implements Node {
 	protected void setName(String name) {
 		this.name = name;
 	}
+	
 	@Override
 	public RSAPub getPublicKey() {
 		return this.privateKey.getPublicKey();
 	}
-
-	protected final String subLog()	{
-		return "["+ this.name +"]  ";
-	}
 	protected RSAPriv getPrivateKey()	{
 		return this.privateKey;
+	}
+	
+	Timeout createTimer(Class<? extends Timeout> type) throws Exception	{
+		return type.getConstructor(new Class[]{InterfaceManager.class}).newInstance(new Object[]{this.iManager});
 	}
 	
 	@Override
@@ -115,58 +124,21 @@ public abstract class AbstractNodeImpl implements Node {
 		return this.privateKey.sign(p.toString());
 	}
 	
+	
 	protected final void flood(Packet p) {
-		this.flood(null, p);
+		this.iManager.flood(p);
 	}
 	protected final void flood(Interface src, Packet p) {
-		
-		if( p == null )
-			Logger.sysLog(LogValues.error, this.getClass().getName(), this.subLog() +" No Packet to flood ");
-		
-		final int size = this.handlers.size();
-		
-		for( int i=0; i<size; i++ )		{
-			LinkHandler handler = this.handlers.get(i);
-			
-			if( src==null || handler.isSource(src) == false )	{
-				handler.send(p);
-			}
-		}//End of loop
-		
-	}//End of Method
-	
-	
+		this.iManager.flood(src, p);
+	}
 	protected final boolean replyFrom(Interface src, Packet p)	{
-		
-		LinkHandler handler = src.getLink().getHandler(this);
-		
-		if( handler != null )	{
-			handler.send(p);
-			return true;
-		}else
-			Logger.sysLog(LogValues.warn, this.getClass().getName(), this.subLog() +" Link Handler not found to reply ");
-		
-		return false;
-	}//End of Method
-	
-	
+		return this.iManager.replyFrom(src, p);
+	}
 	protected final boolean sendTo(Packet p, Interface dest) {
-		
-		final int size = this.handlers.size();
-		
-		for( int i=0; i<size; i++ )		{
-			LinkHandler handler = this.handlers.get(i);
-			
-			if( handler.isDestination(dest) )	{
-				handler.send(p);
-				return true;
-			}
-		}//End of loop
-		
-		return false;
-	}//End of Method
+		return this.iManager.sendTo(p, dest);
+	}
 	
-	
+
 	protected abstract void execute(Interface i, Packet p);
 	
 }
