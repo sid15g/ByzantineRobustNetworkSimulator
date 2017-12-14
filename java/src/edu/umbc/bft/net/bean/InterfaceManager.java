@@ -73,5 +73,22 @@ public class InterfaceManager	{
 		
 		return false;
 	}//End of Method
+	
+	
+	public boolean sendTo(Packet p, String destNodeId)	{
+		
+		final int size = this.handlers.size();
+		
+		for( int i=0; i<size; i++ )		{
+			LinkHandler handler = this.handlers.get(i);
+			
+			if( handler.isDestNodeID(destNodeId) )	{
+				handler.send(p);
+				return true;
+			}
+		}//End of loop
+		
+		return false;
+	}//End of Method
 
 }

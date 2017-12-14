@@ -17,7 +17,6 @@ import edu.umbc.bft.factory.LinkFactory;
 import edu.umbc.bft.factory.NodeFactory;
 import edu.umbc.bft.net.bean.IPAddress;
 import edu.umbc.bft.net.conn.Eth;
-import edu.umbc.bft.net.conn.Interface;
 import edu.umbc.bft.net.conn.Link;
 import edu.umbc.bft.net.nodes.Switch;
 import edu.umbc.bft.net.nodes.impl.TrustedNode;
@@ -48,34 +47,46 @@ public class NetworkBuilder		{
 		
 		float tprob = (float)tnodes/(float)total;
 		float fprob = (float)faulty/(float)total;
-//		int ftnodeMax = tnodes/3;		
-		boolean faultynode = false;
+		
 		int switches = total - tnodes;
+		int ftnodeMax = tnodes/3;
+		
 		int id = 1;
 		
 		for( int i=0; i<total; i++ )	{
 			
-			faultynode = false;
 			Switch s = null;
 			
 			if( rand.nextFloat()<fprob && faulty>0 )	{
-				faultynode = true;
+			
+				if( rand.nextFloat()<tprob && tnodes>0 && ftnodeMax>0 )	{
+					s = NodeFactory.createTrustedNode(this.publicKeyList, this.trustedKeyList, true);
+					tnodes--;
+					ftnodeMax--;
+				}else	{
+					s = NodeFactory.createSwitch(this.trustedKeyList, true);
+					switches--;
+				}
+				
 				faulty--;
+			
+			}else	{
+				
+				if( rand.nextFloat()<tprob && tnodes>0 )	{
+					s = NodeFactory.createTrustedNode(this.publicKeyList, this.trustedKeyList, false);
+					tnodes--;
+				}else if( switches > 0 )	{
+					s = NodeFactory.createSwitch(this.trustedKeyList, false);
+					switches--;
+				}else	{
+					s = NodeFactory.createTrustedNode(this.publicKeyList, this.trustedKeyList, false);
+					tnodes--;
+				}
+				
 			}
 			
-			//TODO add limit to faulty trusted nodes (30%)
-			
-			if( rand.nextFloat()<tprob && tnodes>0 )	{
-				s = NodeFactory.createTrustedNode(this.publicKeyList, this.trustedKeyList, faultynode);
-				tnodes--;
-			}else if( switches > 0 )	{
-				s = NodeFactory.createSwitch(this.trustedKeyList, faultynode);
-				switches--;
-			}else
-				s = NodeFactory.createTrustedNode(this.publicKeyList, this.trustedKeyList, faultynode);
-			
-			RSAPub key = s.getPublicKey();
 			this.switches.put(id++, s);
+			RSAPub key = s.getPublicKey();
 			this.publicKeyList.put(s.getName(), key);
 			
 			if( s instanceof TrustedNode )
@@ -140,18 +151,20 @@ public class NetworkBuilder		{
 	public boolean connect(Switch s1, Switch s2) throws IPNotAvailableException		{
 		
 		IPAddress ip1 = this.factory.createIP();
-		Interface i1 = new Eth(ip1);
+		Eth i1 = new Eth(ip1);
 
 		IPAddress ip2 = this.factory.createIP();
-		Interface i2 = new Eth(ip2);
+		Eth i2 = new Eth(ip2);
 		
 		Link l = LinkFactory.create(i1, i2, true);
 		
 		if( l != null )		{
 			s1.addPhysicalPort(i1);
+			i1.setOwner(s1.getName());
 			boolean res = s1.attach(i1, l);
 			
 			s2.addPhysicalPort(i2);
+			i2.setOwner(s2.getName());
 			res &= s2.attach(i2, l);
 			
 			Logger.sysLog(LogValues.info, this.getClass().getName(), "Link: ["+ s1.getName() +" <--> "+ s2.getName() +"]" );

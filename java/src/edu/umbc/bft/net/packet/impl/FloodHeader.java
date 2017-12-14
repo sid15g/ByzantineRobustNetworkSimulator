@@ -26,6 +26,9 @@ public class FloodHeader implements Header {
 	public void setSequenceNo(long sequenceNo) {
 		this.sequenceNo = sequenceNo;
 	}
+	public void setFakeSource(String source) {
+		this.source = source;
+	}
 	
 	@Override
 	public long getTimestamp() {

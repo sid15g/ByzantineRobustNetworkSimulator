@@ -15,6 +15,8 @@ import edu.umbc.bft.net.conn.Eth;
 import edu.umbc.bft.net.conn.HalfDuplexLink;
 import edu.umbc.bft.net.conn.Interface;
 import edu.umbc.bft.net.conn.Link;
+import edu.umbc.bft.net.nodes.bzt.FaultyBehavior;
+import edu.umbc.bft.net.nodes.impl.FaultySwitch;
 import edu.umbc.bft.net.packet.Payload;
 import edu.umbc.bft.net.packet.payload.Identification;
 import edu.umbc.bft.net.packet.payload.PublicKeyList;
@@ -29,9 +31,10 @@ public class Test {
 		//Test.testLinkFactory();
 		//Test.testForwardingTable();
 		//Test.testIPFactory();
-		Test.testKey();
+		//Test.testKey();
 		//Test.testPayloads();
 		//Test.testMapEquals();
+		Test.testFaultyBehavior();
 	}//End of main
 	
 	public static void testNames() {
@@ -186,5 +189,44 @@ public class Test {
 		System.out.println(m1.equals(m2));
 		
 	}
+
 	
+	public static void testFaultyBehavior()		{
+		
+		RSAPub k1 = KeyStore.getNewKey().getPublicKey();
+		RSAPub k2 = KeyStore.getNewKey().getPublicKey();
+		RSAPub k3 = KeyStore.getNewKey().getPublicKey();
+		
+		Map<String, RSAPub> tkl = new HashMap<String, RSAPub>();
+		tkl.put("1", k1);
+		tkl.put("2", k2);
+		tkl.put("3", k3);
+		
+		FaultySwitch s = new FaultySwitch(tkl, 13);
+		FaultyBehavior fb = s.getFaultyBehavior();
+		
+		
+		Identification i3 = new Identification("S3");
+		i3.addSignature(KeyStore.getNewKey());
+		System.out.println(i3.toString());
+		fb.setIdPacket(i3);
+		
+		Identification i1 = new Identification("S1");
+		i1.addSignature(KeyStore.getNewKey());
+		System.out.println(i1.toString());
+		fb.setIdPacket(i1);
+		
+		Identification i2 = new Identification("S2");
+		i2.addSignature(KeyStore.getNewKey());
+		System.out.println(i2.toString());
+		
+		if( fb.checkIdSpoof() )		{
+			Identification id2 = fb.getIdSpoof(i2.getName());
+			System.out.println(id2.toString());
+			Identification id1 = fb.getIdSpoof(id2.getName());
+			System.out.println(id1.toString());
+		}
+		
+	}//end of method
+
 }

@@ -21,6 +21,9 @@ public class LinkHandler	{
 	public boolean isDestination(Interface i) {
 		return this.dest.equals(i);
 	}
+	public boolean isDestNodeID(String nodeId)	{
+		return this.dest.getOwner().equals(nodeId);
+	}
 	
 	public Packet read() {
 		return this.src.getInputStream().poll();

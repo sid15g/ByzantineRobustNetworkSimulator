@@ -14,16 +14,17 @@ public interface Link	{
 	public double getDropRate();
 	public double getBandwidth();
 	
-	public default void increaseCost() {
+	public default double increaseCost() {
 		double dr = this.getDropRate();
 		dr *= 2;
 		this.setDropRate(dr);
+		return this.getLinkState();
 	}
 	
 	public LinkHandler getHandler(Node n);
 	
 	public default double getLinkState()	{
-		return getBandwidth()*getDropRate();
+		return this.getBandwidth()*this.getDropRate();
 	};
 	
 	public default double compareState(Link l)	{

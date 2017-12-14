@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
-import edu.umbc.bft.factory.PacketFactory;
+import edu.umbc.bft.net.conn.Interface;
+import edu.umbc.bft.net.nodes.Manager;
 import edu.umbc.bft.net.packet.Header;
 import edu.umbc.bft.net.packet.Packet;
 import edu.umbc.bft.net.packet.Payload;
@@ -21,13 +23,14 @@ import edu.umbc.bft.secure.RSAPub;
 import edu.umbc.bft.util.LogValues;
 import edu.umbc.bft.util.Logger;
 
-public class SwitchManager implements PacketFactory	{
+public class SwitchManager implements Manager	{
 	
 	private Map<String, RSAPub> trustedKeyList;
 	private List<NeighborDetail> myNeighbors;
 	private Map<String, NodeBuffer> buffer;
 	private long currentSequenceNo;
 	private byte keyListCount;
+	private int lspState;
 	private String name;
 	private RSAPriv key;
 	
@@ -36,55 +39,80 @@ public class SwitchManager implements PacketFactory	{
 		this.name = name;
 		this.keyListCount = 0;
 		this.trustedKeyList = null;
-		this.currentSequenceNo = 1L;
+		this.lspState  = LSPState.WaitingIDP.ordinal();
 		this.buffer = new HashMap<String, NodeBuffer>();
 		this.myNeighbors = new ArrayList<NeighborDetail>();
+		this.currentSequenceNo = this.getInitialSequenceNo();
 	}//end of constructor
 	
-	private final String sublog()	{
+	protected final String sublog()	{
 		return "["+ this.name +"] ";
+	}
+	private long getInitialSequenceNo()	{
+		long temp = new Random().nextLong() % 1000;
+		return temp>0?temp:(temp*-1);
+	}
+	
+	RSAPriv getKey() {
+		return this.key;
 	}
 	
 	@Override
 	public String getSourceNodeId() {
 		return this.name;
 	}
+	@Override
 	public void setName(String name) {
 		this.name = name;
 	}
+	@Override
 	public long getSequenceNo() {
 		return this.currentSequenceNo;
 	}
+	@Override
 	public long getNextSequenceNo() {
 		return this.currentSequenceNo++;
 	}
+	long getLastSequenceNo(String nodeName)	{
+		if( this.buffer.containsKey(nodeName) )	{
+			return this.buffer.get(nodeName).getLastSequenceNo();
+		}
+		return -1;
+	}
+	@Override
 	public void increaseKeyListCount() {
 		this.keyListCount++;
 		Logger.sysLog(LogValues.debug, this.getClass().getName(), this.sublog() +" COUNT "+ this.keyListCount );
 	}
+	@Override
 	public void resetKeyListCount() {
 		this.keyListCount = 0;
 	}
-	public byte getKeyListCount() {
+	byte getKeyListCount() {
 		return this.keyListCount;
 	}
 	
+	@Override
+	public boolean isLSPState(LSPState state) {
+		return this.lspState == state.ordinal();
+	}	
+	@Override
+	public void setLSPState(LSPState state)	{
+		this.lspState = state.ordinal();
+	}
+	
+	@Override
 	public int getBufferSize() {
 		return this.buffer.size();
 	}
 	
-	public NodeBuffer getBuffer(String nodeId) {
-		if( nodeId != null )
-			return this.buffer.get(nodeId);
-		else
-			return null;
-	}
+	@Override
 	public boolean checkFromBuffer(Packet p)	{
 		
 		if( p==null )
 			return false;
 		
-		String nodeId = p.getHeader().getSource();
+		String nodeId = p.getSource();
 		
 		if( nodeId!=null && this.buffer.containsKey(nodeId) )	{
 			return this.buffer.get(nodeId).updateLastMessage(p);
@@ -97,9 +125,12 @@ public class SwitchManager implements PacketFactory	{
 		
 	}//end of method
 	
+	@Override
 	public boolean verifyPayloadSignature(Packet p)	{
 		return this.verifyPayloadSignature(p, this.trustedKeyList);
 	}
+	
+	@Override
 	public boolean verifyPayloadSignature(Packet p, Map<String, RSAPub> map)	{
 		if( p==null )	{
 			Logger.sysLog(LogValues.error, this.getClass().getName(), this.sublog() +" Cannot verify payload - packet not found " );
@@ -109,7 +140,7 @@ public class SwitchManager implements PacketFactory	{
 			return false;
 		}
 			
-		String src = p.getHeader().getSource();
+		String src = p.getSource();
 		RSAPub key = map.get(src);
 		
 		if( key!=null && p.getPayload() instanceof PayloadWithKey )		{
@@ -119,7 +150,11 @@ public class SwitchManager implements PacketFactory	{
 			return false;
 	}
 	
-	public boolean addNeighborDetail( String nodeId, RSAPub key )	{
+	@Override
+	public boolean addNeighborDetail( Identification i )	{
+		return this.addNeighborDetail(i.getName(), i.getKey());
+	}
+	boolean addNeighborDetail( String nodeId, RSAPub key )	{
 		
 		NeighborDetail n = new NeighborDetail(nodeId, key);
 		
@@ -127,17 +162,53 @@ public class SwitchManager implements PacketFactory	{
 			this.myNeighbors.add(n);
 			return true;
 		}else if( nodeId != null )	{
-			Logger.sysLog(LogValues.info, this.getClass().getName(), this.sublog() +" Neighbour detail updated ->  ["+ nodeId +"]"  );
+			Logger.sysLog(LogValues.info, this.getClass().getName(), this.sublog() +" Neighbor detail updated ->  ["+ nodeId +"]"  );
 			int index = this.myNeighbors.indexOf(n);
 			n = this.myNeighbors.get(index);
 			n.setKey(key);
 			return true;
-		}else
+		}else	{
+			Logger.sysLog(LogValues.warn, this.getClass().getName(), this.sublog() +" Neighbor not added " );
 			return false;
+		}
 	}
-	public boolean addNeighborDetail( Identification i )	{
-		return this.addNeighborDetail(i.getName(), i.getKey());
-	}	
+	boolean updateNeighborDetail( String nodeId, Double cost )	{
+		
+		if( this.myNeighbors!=null && nodeId !=null )			{
+			for( int i=0; i<this.myNeighbors.size(); i++ )	{
+				NeighborDetail n = this.myNeighbors.get(i);
+				
+				if( n.getName().equals(nodeId) )	{
+					n.setCost(cost);
+					return true;
+				}
+			}
+		}
+		return false;
+		
+	}
+
+	@Override
+	public boolean checkAndFloodIdentificationMessage(Packet p, InterfaceManager manager)		{
+		
+		if( this.isPKLsReceived() )		{
+			
+			Logger.sysLog(LogValues.debug, this.getClass().getName(), this.sublog() +" Flooding ID(name, key) message " );
+			manager.flood(this.createIdentificationMessage());
+			this.increaseKeyListCount();
+			
+			return true;
+			
+		}else	{
+			Logger.sysLog(LogValues.info, this.getClass().getName(), this.sublog() +" Waiting for PKLs, then broadcast IDP " );
+		}/** once all PKLs are received from all Trusted Nodes, flood ID */
+		
+		return false;
+		
+	}
+	
+	
+	@Override
 	public String[] getMyNeighbors()	{
 		String []arr = new String[this.myNeighbors.size()];
 		for( int i=0; i<arr.length; i++ )	{
@@ -146,16 +217,32 @@ public class SwitchManager implements PacketFactory	{
 		return arr;
 	}
 	
-	public int getTrustedNodeCount() {
-		return this.trustedKeyList.size();
-	}
-	public Map<String, RSAPub> getTrustedKeyList() {
+	Map<String, RSAPub> getTrustedKeyList() {
 		return this.trustedKeyList;
 	}
+
+	int getTrustedNodeCount() {
+		return this.trustedKeyList.size();
+	}
+	@Override
 	public void setTrustedKeyList(Map<String, RSAPub> trustedKeyList) {
 		this.trustedKeyList = trustedKeyList;
 	}
+	@Override
+	public boolean isPKLsReceived()	{
+		return this.getKeyListCount()==this.getTrustedNodeCount();
+	}
 	
+	@Override
+	public void increaseLinkCost(String nodeId, Interface i)	{
+		double ucost = i.getLink().increaseCost();
+		
+		if( this.updateNeighborDetail(nodeId, ucost) == false )
+			Logger.sysLog(LogValues.error, this.getClass().getName(), this.sublog() +" Neighbor link cost increase failed ");
+		
+	}
+	
+	@Override
 	public DatagramRoute calculateRoute(String destNodeId) {
 		//TODO Phase 2
 		return null;
@@ -188,14 +275,25 @@ public class SwitchManager implements PacketFactory	{
 	}
 	@Override
 	public Packet createLinkStatePacket() {
-		LinkState ls = new LinkState(this.myNeighbors);
+		List<NeighborDetail> list = new ArrayList<NeighborDetail>();
+		
+		final NeighborDetail me = new NeighborDetail(this.name, this.key.getPublicKey());
+		list.add(me);
+
+		for( int i=0; i<this.myNeighbors.size(); i++ )	{
+			list.add(this.myNeighbors.get(i));
+		}
+		
+		LinkState ls = new LinkState(list);
 		ls.addSignature(this.key);
 		return this.createPacket(ls);
 	}
 	
+	@Override
 	public Packet createPacket(Payload p)	{
 		return this.createPacket(this.createFloodHeader(), p);
 	}
+	@Override
 	public Packet createPacket(Header h, Payload p)	{
 		if( h!=null && p!=null )
 			return new DefaultPacket(h, p);

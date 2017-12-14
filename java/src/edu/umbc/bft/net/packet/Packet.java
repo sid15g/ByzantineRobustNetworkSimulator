@@ -7,6 +7,10 @@ public interface Packet	{
 	public Header getHeader();
 	public Payload getPayload();
 	
+	public default String getSource()	{
+		return this.getHeader().getSource();
+	}
+	
 	public default boolean toFlood()	{
 		Header h = this.getHeader();
 		if( h != null )

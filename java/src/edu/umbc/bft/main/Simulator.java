@@ -23,15 +23,13 @@ public class Simulator {
 	}
 	
 	public static void main(String[] args) throws Exception		{
-		Runtime.getRuntime().addShutdownHook(Simulator.cleaner);
 		Simulator.configureLOG4J();
 		CoreUtils.loadProperties();
-		Simulator.load();
-		//Simulator.simulate();
+		Simulator.loadAndSimulate();
 	}//End Of Main
 	
 	
-	public static void load() {
+	public static void loadAndSimulate() {
 
 		final int total = CoreUtils.getPropertiesAsInteger("total.switch.count");
 		final int faulty = CoreUtils.getPropertiesAsInteger("switch.faulty.count");
@@ -43,6 +41,7 @@ public class Simulator {
 		
 		if( total<=0 || icount<=0 )	{
 			Logger.sysLog(LogValues.info, Simulator.class.getName(), " No Network found... Check config.properties | Exiting application..." );
+			success = false;
 			return;
 		}
 		
@@ -78,8 +77,9 @@ public class Simulator {
 		
 		
 		if( success )		{
-			Logger.sysLog(LogValues.info, Simulator.class.getName(), " Network setup complete... " );
 			Simulator.builder.dump();
+			Runtime.getRuntime().addShutdownHook(Simulator.cleaner);
+			Logger.sysLog(LogValues.info, Simulator.class.getName(), " Network setup complete... " );
 			Simulator.cleaner.setSwitches(threads);
 			Simulator.simulate(threads);
 		}else	{
@@ -93,7 +93,7 @@ public class Simulator {
 	public static void simulate(List<Thread> threads) {
 		
 		Simulator.builder.initializeAndRunNodes(threads);
-		//TODO
+		//TODO Phase 2, create end users and send datagrams
 		
 	}//End of method
 	

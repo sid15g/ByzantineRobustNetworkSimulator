@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+/** Defines the route, decided by the source */
 public class DatagramRoute implements Iterator<String>	{
 	
 	private Queue<String> route;

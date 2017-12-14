@@ -34,6 +34,11 @@ public class NodeBuffer	{
 		return "["+ this.srcNode +","+ this.bufNode +"] ";
 	}
 	
+	
+	long getLastSequenceNo() {
+		return this.lastSeqNo;
+	}
+	
 	boolean updateLastMessage(Packet p)		{
 		
 		if( this.isValid(p) == false )	{

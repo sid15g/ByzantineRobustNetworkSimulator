@@ -7,8 +7,8 @@ public class Eth implements Interface {
 
 	private MessageStream inputBuffer;
 	private Interface.Status status;
+	private String MAC, owner;
 	private IPAddress ip;
-	private String MAC;
 	private Link link;
 	
 	public Eth(byte[] ip)	{
@@ -18,6 +18,7 @@ public class Eth implements Interface {
 	public Eth(IPAddress ip)	{
 		this.ip = ip;
 		this.link = null;
+		this.owner = null;
 		this.inputBuffer = null;
 		this.status = Interface.Status.DOWN;
 		this.MAC = NameGenerator.assignMACAddress();
@@ -39,6 +40,14 @@ public class Eth implements Interface {
 	@Override
 	public Interface.Status getStatus() {
 		return this.status;
+	}
+	
+	public void setOwner(String owner) {
+		this.owner = owner;
+	}
+	@Override
+	public String getOwner() {
+		return this.owner;
 	}
 	
 	@Override

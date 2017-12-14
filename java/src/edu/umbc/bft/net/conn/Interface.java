@@ -13,6 +13,7 @@ public interface Interface {
 	public MessageStream getInputStream();
 	public Interface.Status getStatus();
 	public String getMACAddress();
+	public String getOwner();
 	public String getIPv4();
 	public Link getLink();
 	

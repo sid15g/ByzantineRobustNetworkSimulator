@@ -3,9 +3,12 @@ package edu.umbc.bft.net.nodes.impl;
 import java.util.Map;
 
 import edu.umbc.bft.net.conn.Interface;
+import edu.umbc.bft.net.nodes.Manager.LSPState;
 import edu.umbc.bft.net.nodes.abs.AbstractSwitchImpl;
+import edu.umbc.bft.net.nodes.bzt.ByzantineSwitch;
 import edu.umbc.bft.net.packet.Packet;
 import edu.umbc.bft.net.packet.payload.Identification;
+import edu.umbc.bft.net.packet.payload.LinkState;
 import edu.umbc.bft.net.packet.payload.PublicKeyList;
 import edu.umbc.bft.secure.RSAPub;
 import edu.umbc.bft.util.LogValues;
@@ -28,7 +31,7 @@ public class GeneralSwitch extends AbstractSwitchImpl	{
 		
 		if( super.manager.checkFromBuffer(p) == false )	{
 			return;
-		}else
+		}else if( (this instanceof ByzantineSwitch) == false )
 			Logger.sysLog(LogValues.info, this.getClass().getName(), this.subLog() +" Received: "+ p.dscp() );
 		
 		boolean verify = false;
@@ -38,62 +41,75 @@ public class GeneralSwitch extends AbstractSwitchImpl	{
 
 			case "PublicKeyList":
 				
-				PublicKeyList payload = (PublicKeyList)p.getPayload();
+				PublicKeyList pklm = (PublicKeyList)p.getPayload();
 				verify = this.manager.verifyPayloadSignature(p); 
 				this.manager.increaseKeyListCount();
 				
 				if( verify )	{
 					Logger.sysLog(LogValues.debug, this.getClass().getName(), this.subLog() +" Verifying PKL signature... " );
-					Map<String, RSAPub> map = this.comparator.tieBreaker(payload.getPublicKeyList());
-					payload.setKeys(map);
+					this.comparator.tieBreaker(pklm.getPublicKeyList());
 					super.flood(i, p);
 					//TODO send PKL - ACK
 				}else	{
-					Logger.sysLog(LogValues.warn, this.getClass().getName(), this.subLog() +" PKL Verification failed " );
-					Logger.sysLog(LogValues.debug, this.getClass().getName(), this.subLog() +" Trusted Key : "+ payload.getKey().toString() );
-					Logger.sysLog(LogValues.debug, this.getClass().getName(), this.subLog() +" Received Key "+ payload.getKey().toString() );
+					this.manager.increaseLinkCost(p.getSource(), i);
+					Logger.sysLog(LogValues.warn, this.getClass().getName(), this.subLog() +" PKL verification failed! " );
+					Logger.sysLog(LogValues.debug, this.getClass().getName(), this.subLog() +" Trusted Key : "+ pklm.getKey().toString() );
+					Logger.sysLog(LogValues.debug, this.getClass().getName(), this.subLog() +" Received Key "+ pklm.getKey().toString() );
 				}
 				
+				boolean flooded = this.manager.checkAndFloodIdentificationMessage(p, super.getInterfaceManager());
 				
-				if( this.manager.getKeyListCount() == this.manager.getTrustedNodeCount() )	{
-					
-					Logger.sysLog(LogValues.debug, this.getClass().getName(), this.subLog() +" Flooding ID(name, key) message " );
-					super.flood(super.manager.createIdentificationMessage());
-					this.manager.increaseKeyListCount();
-					
-					if( super.startIdentificationTimer() )	{
-						Logger.sysLog(LogValues.info, this.getClass().getName(), this.subLog() +" Waiting for Neighboring IDs to flood LSP " );
-					}
-					
-				}/** once all PKLs are received from all Trusted Nodes, flood ID */
+				if( flooded && super.startIdentificationTimer() )	{
+					Logger.sysLog(LogValues.info, this.getClass().getName(), this.subLog() +" Waiting for Neighboring IDs to flood LSP " );
+				}
 	
 				break;
 
 			case "Identification":
 				
-				Identification id = (Identification)p.getPayload();				
+				Identification id = (Identification)p.getPayload();	
 				
+				super.manager.addNeighborDetail(id);
 				verify = this.manager.verifyPayloadSignature(p, this.comparator.getMap()); 
 				Logger.sysLog(LogValues.debug, this.getClass().getName(), this.subLog() +" ID Verification -> ["+ id.getName() +"] : "+ verify );
 				
 				if( verify == false )		{
-					Logger.sysLog(LogValues.info, this.getClass().getName(), this.subLog() +" Neighbour verification failed | Cost increased " );
+					Logger.sysLog(LogValues.info, this.getClass().getName(), this.subLog() +" Neighbor verification failed | Cost increased " );
 					/** Since ID was not verified, increase the cost of the link */
-					i.getLink().increaseCost();
-				}
+					this.manager.increaseLinkCost(id.getName(), i);
+				}				
 				
-				if( super.manager.addNeighborDetail(id) == false )
-					Logger.sysLog(LogValues.warn, this.getClass().getName(), this.subLog() +" Neighbour not added " );
+				if( this.manager.isLSPState(LSPState.Sent) )	{
+					Logger.sysLog(LogValues.info, this.getClass().getName(), this.subLog() +" Waiting to flood new LSP " );
+					this.manager.setLSPState(LSPState.ReSend);
+					super.startIdentificationTimer();
+				}
 				
 				break;
 				
 			case "LinkState":
+				/** Link State Neighbor information already handled in 'manager.checkFromBuffer()->NodeBuffer:updateLastMessage()' */
+				LinkState ls = (LinkState)p.getPayload();
+				String pstr = "[ "+ p.getSource() +", "+ ls.toString() +" ]";
+				Logger.sysLog(LogValues.info, this.getClass().getName(), this.subLog() +" LSP received : "+ pstr );
+				
+				super.flood(i, p);
 				break;
 				
 			case "Datagram":
+				//TODO create route, forward and wait for ACK
+				break;
+				
+			case "PKLAck":
+				//TODO
+				break;
+				
+			case "DataAck":
+				//TODO
 				break;
 				
 			default:
+				Logger.sysLog(LogValues.info, this.getClass().getName(), this.subLog() +" UnIdentified Packet Received " );
 				break;
 		
 		}//end of switch

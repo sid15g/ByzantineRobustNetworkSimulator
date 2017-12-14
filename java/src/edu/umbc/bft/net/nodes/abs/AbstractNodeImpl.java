@@ -57,6 +57,9 @@ public abstract class AbstractNodeImpl implements Node {
 	protected RSAPriv getPrivateKey()	{
 		return this.privateKey;
 	}
+	protected InterfaceManager getInterfaceManager() {
+		return this.iManager;
+	}
 	
 	Timeout createTimer(Class<? extends Timeout> type) throws Exception	{
 		return type.getConstructor(new Class[]{InterfaceManager.class}).newInstance(new Object[]{this.iManager});
@@ -70,9 +73,9 @@ public abstract class AbstractNodeImpl implements Node {
 	}
 	@Override
 	public void addPhysicalPort(Interface i) {
-		if( !this.running && !this.stopped )
+		if( !this.running && !this.stopped )	{
 			this.ports.add(i);
-		else
+		}else
 			Logger.sysLog(LogValues.warn, this.getClass().getName(), this.subLog() +" Cannot add PhysicalPort while the network is running... ");
 	}
 	@Override
