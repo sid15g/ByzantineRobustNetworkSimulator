@@ -35,6 +35,7 @@ public class Simulator {
 		final int faulty = CoreUtils.getPropertiesAsInteger("switch.faulty.count");
 		final int tnodes = CoreUtils.getPropertiesAsInteger("trusted.nodes.count");
 		final int icount = CoreUtils.getPropertiesAsInteger("interface.count");
+		final String manualConfig = CoreUtils.getProperties("manual");
 		final String comma = String.valueOf(',');
 		
 		boolean success = true;
@@ -46,7 +47,12 @@ public class Simulator {
 		}
 		
 		Logger.sysLog(LogValues.info, Simulator.class.getName(), " Building network... " );
-		List<Thread> threads = Simulator.builder.createSwitches(total, tnodes, faulty);
+		List<Thread> threads = null;
+		
+		if( manualConfig!=null && manualConfig.trim().equalsIgnoreCase("true") )
+			threads = Simulator.builder.createSwitches(total);
+		else
+			threads = Simulator.builder.createSwitchesRandomly(total, tnodes, faulty);
 		
 		try {
 			

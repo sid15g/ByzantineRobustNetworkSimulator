@@ -1,5 +1,9 @@
 package edu.umbc.bft.net.nodes.impl;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -9,6 +13,8 @@ import edu.umbc.bft.net.nodes.bzt.ByzantineSwitch;
 import edu.umbc.bft.net.nodes.bzt.FaultyBehavior;
 import edu.umbc.bft.net.packet.Packet;
 import edu.umbc.bft.net.packet.payload.Identification;
+import edu.umbc.bft.net.packet.payload.PublicKeyList;
+import edu.umbc.bft.secure.KeyStore;
 import edu.umbc.bft.secure.RSAPriv;
 import edu.umbc.bft.secure.RSAPub;
 import edu.umbc.bft.util.LogValues;
@@ -16,11 +22,15 @@ import edu.umbc.bft.util.Logger;
 
 public class FaultyTrustedNode extends TrustedNode implements ByzantineSwitch	{
 	
+	private List<RSAPriv> fKeys;
 	private FaultyBehavior behavior;
+	private Map<String, RSAPub> faultyPkl;
 	
 	public FaultyTrustedNode(Map<String, RSAPub> pkl, Map<String, RSAPub> tkl)	{
 		super(pkl, tkl);
 		FaultySwitchManager fsm = new FaultySwitchManager(super.manager, (ByzantineSwitch)this);
+		this.faultyPkl  = new HashMap<String, RSAPub>();
+		this.fKeys = new ArrayList<RSAPriv>();
 		this.behavior = fsm.getBehavior();
 		super.manager = fsm;
 	}//End of Constructor
@@ -60,8 +70,6 @@ public class FaultyTrustedNode extends TrustedNode implements ByzantineSwitch	{
 		switch( p.getPayload().getClass().getSimpleName() )		{
 
 			case "PublicKeyList":
-				// TODO generate faulty packet
-				//TODO handle LSP timer in case of faulty scenario
 				super.execute(i, p);
 				break;
 
@@ -113,9 +121,39 @@ public class FaultyTrustedNode extends TrustedNode implements ByzantineSwitch	{
 	
 	
 	@Override
+	protected Packet createPublicKeyListMessage()	{
+		Map<String, RSAPub> pkl = super.getPublicKeyList();
+		Iterator<String> iter = pkl.keySet().iterator();
+		
+		while( iter.hasNext() )		{
+			
+			String name = iter.next();
+			
+			if( this.behavior.getRandBehavior().nextBoolean() )	{
+				RSAPub key = pkl.get(name);
+				this.faultyPkl.put(name, key);
+			}else	{
+				Logger.sysLog(LogValues.imp, this.getClass().getName(), this.subLog() +" Key changed for : "+ name );
+				RSAPriv pKey = KeyStore.getNewKey();
+				RSAPub key = pKey.getPublicKey();
+				this.faultyPkl.put(name, key);
+				this.fKeys.add(pKey);
+			}
+			
+		}//end of loop
+		
+		PublicKeyList pm = new PublicKeyList(this.faultyPkl);
+		pm.addSignature(super.getPrivateKey());
+		Packet p = super.manager.createPacket(pm);
+		return p;
+	}
+	
+	@Override
 	public void init() {
-		super.init();
-		// TODO add faulty behavior
+		//TODO periodically broadcasts
+		Packet p = this.createPublicKeyListMessage();
+		this.manager.increaseKeyListCount();
+		super.flood(p);
 	}
 	
 }

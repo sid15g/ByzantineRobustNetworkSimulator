@@ -224,6 +224,7 @@ public class FaultySwitchManager implements Manager	{
 			manager.sendTo(normalP, p.getSource());
 			return true;
 		}else	{
+			//TODO faulty might not wait for all PKL and broadcast before
 			Logger.sysLog(LogValues.info, this.getClass().getName(), this.behavior.sublog() +" Waiting for PKL, then broadcast IDP " );
 			return false;
 		}

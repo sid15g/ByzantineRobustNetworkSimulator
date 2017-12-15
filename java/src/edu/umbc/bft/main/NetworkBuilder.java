@@ -21,6 +21,7 @@ import edu.umbc.bft.net.conn.Link;
 import edu.umbc.bft.net.nodes.Switch;
 import edu.umbc.bft.net.nodes.impl.TrustedNode;
 import edu.umbc.bft.secure.RSAPub;
+import edu.umbc.bft.util.CoreUtils;
 import edu.umbc.bft.util.LogValues;
 import edu.umbc.bft.util.Logger;
 
@@ -41,7 +42,57 @@ public class NetworkBuilder		{
 		this.trustedKeyList = new HashMap<String, RSAPub>();
 	}//end of constructor
 	
-	public List<Thread> createSwitches(int total, int tnodes, int faulty)	{
+	
+	public List<Thread> createSwitches(int total)	{
+		
+		List<Thread> list = new ArrayList<Thread>();
+		int id = 1;
+		
+		String[] faultyNodes = CoreUtils.getProperties("faulty.ids").trim().split(",");
+		String[] trustedNodes = CoreUtils.getProperties("trustednode.ids").trim().split(",");
+		
+		List<Integer> fNodes = new ArrayList<Integer>();
+		List<Integer> tNodes  = new ArrayList<Integer>();
+		
+		for( String n: faultyNodes ){
+			fNodes.add(Integer.parseInt(n));
+		}
+		
+		for( String n: trustedNodes ){
+			tNodes.add(Integer.parseInt(n));
+		}
+		
+		for( int i=0; i<total; i++ )	{
+			
+			Switch s = null;
+			boolean faulty = false;
+			
+			if( fNodes.contains(id) )	{
+				faulty = true;
+			}else
+				faulty = false;
+			
+			if( tNodes.contains(id) )
+				s = NodeFactory.createTrustedNode(this.publicKeyList, this.trustedKeyList, faulty);
+			else
+				s = NodeFactory.createSwitch(this.trustedKeyList, faulty);
+			
+			this.switches.put(id++, s);
+			RSAPub key = s.getPublicKey();
+			this.publicKeyList.put(s.getName(), key);
+			
+			if( s instanceof TrustedNode )
+				this.trustedKeyList.put(s.getName(), key);
+			
+			list.add(new Thread(s));
+		
+		}//end of loop
+				
+		return list;
+		
+	}//end of method
+	
+	public List<Thread> createSwitchesRandomly(int total, int tnodes, int faulty)	{
 		
 		List<Thread> list = new ArrayList<Thread>();
 		
