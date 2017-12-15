@@ -1,9 +1,9 @@
 # Implementation of Byzantine Robustness over a Network Layer
 
-Implemented as a academic project, under `[Prof. Haibin Zhang](https://www.csee.umbc.edu/~hbzhang/)` in `CMSC-626 (Principles of Computer Security)`
+Implemented as a academic project, under [Prof. Haibin Zhang](https://www.csee.umbc.edu/~hbzhang/) in `CMSC-626 (Principles of Computer Security)`
 
 ### About:
-Aim to simulate a network with byzantine faults and overcome them using protocol defined in `[Network Layer protocols with Byzantine Robustness, Radia Perlman](http://publications.csail.mit.edu/lcs/pubs/pdf/MIT-LCS-TR-429.pdf)`.
+Aim to simulate a network with byzantine faults and overcome them using protocol defined in [Network Layer protocols with Byzantine Robustness, Radia Perlman](http://publications.csail.mit.edu/lcs/pubs/pdf/MIT-LCS-TR-429.pdf).
 
 ### Prerequisites:
 * Java 8
