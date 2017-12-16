@@ -19,9 +19,8 @@ Aim to simulate a network with byzantine faults and overcome them using protocol
 
 
 ### Experiments performed:
-* Using invalid keys
-* Manupulating network packets
-* Faking Neighbors (a switch 'C', faking 'A' as 'B' and 'B' as 'A')
+* Manipulating network packets
+* Sending invalid Identification/Faking Neighbors (a switch 'C', faking 'A' as 'B' and 'B' as 'A')
 * Flooding invalid Public Key List
 * Flooding invalid Link States by decreasing link costs
 
